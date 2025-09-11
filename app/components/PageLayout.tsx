@@ -1,4 +1,4 @@
-import { Await, Link } from 'react-router';
+import {Await, Link} from 'react-router';
 import {Suspense, useId} from 'react';
 import type {
   CartApiQueryFragment,
@@ -45,7 +45,9 @@ export function PageLayout({
           publicStoreDomain={publicStoreDomain}
         />
       )}
-      <main>{children}</main>
+      <main className="min-h-screen bg-primary-light pt-header pb-12">
+        {children}
+      </main>
       <Footer
         footer={footer}
         header={header}
@@ -58,7 +60,9 @@ export function PageLayout({
 function CartAside({cart}: {cart: PageLayoutProps['cart']}) {
   return (
     <Aside type="cart" heading="CART">
-      <Suspense fallback={<p>Loading cart ...</p>}>
+      <Suspense
+        fallback={<p className="p-4 text-gray-500">Loading cart ...</p>}
+      >
         <Await resolve={cart}>
           {(cart) => {
             return <CartMain cart={cart} layout="aside" />;
@@ -73,11 +77,10 @@ function SearchAside() {
   const queriesDatalistId = useId();
   return (
     <Aside type="search" heading="SEARCH">
-      <div className="predictive-search">
-        <br />
+      <div className="p-4 predictive-search">
         <SearchFormPredictive>
           {({fetchResults, goToSearch, inputRef}) => (
-            <>
+            <div className="flex gap-2">
               <input
                 name="q"
                 onChange={fetchResults}
@@ -86,10 +89,15 @@ function SearchAside() {
                 ref={inputRef}
                 type="search"
                 list={queriesDatalistId}
+                className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-accent"
               />
-              &nbsp;
-              <button onClick={goToSearch}>Search</button>
-            </>
+              <button
+                onClick={goToSearch}
+                className="px-4 py-2 bg-accent text-white rounded-md hover:bg-accent-dark transition duration-200"
+              >
+                Search
+              </button>
+            </div>
           )}
         </SearchFormPredictive>
 
@@ -98,7 +106,9 @@ function SearchAside() {
             const {articles, collections, pages, products, queries} = items;
 
             if (state === 'loading' && term.current) {
-              return <div>Loading...</div>;
+              return (
+                <div className="mt-4 text-center text-gray-500">Loading...</div>
+              );
             }
 
             if (!total) {
@@ -106,7 +116,7 @@ function SearchAside() {
             }
 
             return (
-              <>
+              <div className="mt-4">
                 <SearchResultsPredictive.Queries
                   queries={queries}
                   queriesDatalistId={queriesDatalistId}
@@ -135,14 +145,16 @@ function SearchAside() {
                   <Link
                     onClick={closeSearch}
                     to={`${SEARCH_ENDPOINT}?q=${term.current}`}
+                    className="block mt-4 text-accent hover:underline"
                   >
                     <p>
-                      View all results for <q>{term.current}</q>
-                      &nbsp; →
+                      View all results for{' '}
+                      <q className="italic">{term.current}</q>
+                      <span className="ml-2">→</span>
                     </p>
                   </Link>
                 ) : null}
-              </>
+              </div>
             );
           }}
         </SearchResultsPredictive>

@@ -1,5 +1,5 @@
 import {type LoaderFunctionArgs} from '@shopify/remix-oxygen';
-import { Await, useLoaderData, Link, type MetaFunction } from 'react-router';
+import {Await, useLoaderData, Link, type MetaFunction} from 'react-router';
 import {Suspense} from 'react';
 import {Image, Money} from '@shopify/hydrogen';
 import type {
@@ -59,7 +59,7 @@ function loadDeferredData({context}: LoaderFunctionArgs) {
 export default function Homepage() {
   const data = useLoaderData<typeof loader>();
   return (
-    <div className="home">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <FeaturedCollection collection={data.featuredCollection} />
       <RecommendedProducts products={data.recommendedProducts} />
     </div>
@@ -75,15 +75,28 @@ function FeaturedCollection({
   const image = collection?.image;
   return (
     <Link
-      className="featured-collection"
+      className="block mb-12 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition duration-300"
       to={`/collections/${collection.handle}`}
     >
       {image && (
-        <div className="featured-collection-image">
-          <Image data={image} sizes="100vw" />
+        <div className="relative aspect-square md:aspect-[21/9] w-full">
+          <Image
+            data={image}
+            sizes="100vw"
+            className="object-cover w-full h-full"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent px-6 flex items-end">
+            <h1 className="text-3xl md:text-4xl font-bold text-white p-6 md:p-10">
+              {collection.title}
+              {collection.description && (
+                <p className="w-[100%] mt-3 text-lg font-light overflow-hidden text-ellipsis whitespace-normal line-clamp-6">
+                  {collection.description}
+                </p>
+              )}
+            </h1>
+          </div>
         </div>
       )}
-      <h1>{collection.title}</h1>
     </Link>
   );
 }
@@ -94,12 +107,16 @@ function RecommendedProducts({
   products: Promise<RecommendedProductsQuery | null>;
 }) {
   return (
-    <div className="recommended-products">
-      <h2>Recommended Products</h2>
-      <Suspense fallback={<div>Loading...</div>}>
+    <div className="my-12">
+      <h2 className="text-2xl font-bold mb-6">Recommended Products</h2>
+      <Suspense
+        fallback={
+          <div className="text-center py-10 text-gray-500">Loading...</div>
+        }
+      >
         <Await resolve={products}>
           {(response) => (
-            <div className="recommended-products-grid">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {response
                 ? response.products.nodes.map((product) => (
                     <ProductItem key={product.id} product={product} />
@@ -109,7 +126,6 @@ function RecommendedProducts({
           )}
         </Await>
       </Suspense>
-      <br />
     </div>
   );
 }
@@ -118,6 +134,7 @@ const FEATURED_COLLECTION_QUERY = `#graphql
   fragment FeaturedCollection on Collection {
     id
     title
+    description
     image {
       id
       url
