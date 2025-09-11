@@ -365,6 +365,31 @@ export type RecommendedProductsQuery = {
   };
 };
 
+export type GetLatestArticlesQueryVariables = StorefrontAPI.Exact<{
+  blogHandle: StorefrontAPI.Scalars['String']['input'];
+  numArticles: StorefrontAPI.Scalars['Int']['input'];
+}>;
+
+export type GetLatestArticlesQuery = {
+  blog?: StorefrontAPI.Maybe<{
+    articles: {
+      edges: Array<{
+        node: Pick<
+          StorefrontAPI.Article,
+          'id' | 'title' | 'handle' | 'publishedAt' | 'excerpt'
+        > & {
+          image?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.Image, 'url' | 'altText'>
+          >;
+          authorV2?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.ArticleAuthor, 'name'>
+          >;
+        };
+      }>;
+    };
+  }>;
+};
+
 export type ArticleQueryVariables = StorefrontAPI.Exact<{
   articleHandle: StorefrontAPI.Scalars['String']['input'];
   blogHandle: StorefrontAPI.Scalars['String']['input'];
@@ -1208,6 +1233,10 @@ interface GeneratedQueryTypes {
   '#graphql\n  fragment RecommendedProduct on Product {\n    id\n    title\n    handle\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n  }\n  query RecommendedProducts ($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    products(first: 4, sortKey: UPDATED_AT, reverse: true) {\n      nodes {\n        ...RecommendedProduct\n      }\n    }\n  }\n': {
     return: RecommendedProductsQuery;
     variables: RecommendedProductsQueryVariables;
+  };
+  '#graphql\n  query getLatestArticles($blogHandle: String!, $numArticles: Int!) {\n  blog(handle: $blogHandle) {\n    articles(first: $numArticles, sortKey: PUBLISHED_AT, reverse: true) {\n      edges {\n        node {\n          id\n          title\n          handle\n          publishedAt\n          excerpt(truncateAt: 150)\n          image {\n            url\n            altText\n          }\n          authorV2 {\n            name\n          }\n        }\n      }\n    }\n  }\n}\n': {
+    return: GetLatestArticlesQuery;
+    variables: GetLatestArticlesQueryVariables;
   };
   '#graphql\n  query Article(\n    $articleHandle: String!\n    $blogHandle: String!\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(language: $language, country: $country) {\n    blog(handle: $blogHandle) {\n      handle\n      articleByHandle(handle: $articleHandle) {\n        handle\n        title\n        contentHtml\n        publishedAt\n        author: authorV2 {\n          name\n        }\n        image {\n          id\n          altText\n          url\n          width\n          height\n        }\n        seo {\n          description\n          title\n        }\n      }\n    }\n  }\n': {
     return: ArticleQuery;

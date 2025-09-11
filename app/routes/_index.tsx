@@ -5,8 +5,10 @@ import {Image, Money} from '@shopify/hydrogen';
 import type {
   FeaturedCollectionFragment,
   RecommendedProductsQuery,
+  GetLatestArticlesQuery,
 } from 'storefrontapi.generated';
 import {ProductItem} from '~/components/ProductItem';
+import {ArticleItem} from '~/components/ArticleItem';
 
 export const meta: MetaFunction = () => {
   return [{title: 'Hydrogen | Home'}];
@@ -51,8 +53,22 @@ function loadDeferredData({context}: LoaderFunctionArgs) {
       return null;
     });
 
+  const latestArticles = context.storefront
+    .query(LATEST_ARTICLES_QUERY, {
+      variables: {
+        blogHandle: 'novidades',
+        numArticles: 4,
+      },
+    })
+    .catch((error) => {
+      // Log query errors, but don't throw them so the page can still render
+      console.error(error);
+      return null;
+    });
+
   return {
     recommendedProducts,
+    latestArticles,
   };
 }
 
@@ -62,6 +78,7 @@ export default function Homepage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <FeaturedCollection collection={data.featuredCollection} />
       <RecommendedProducts products={data.recommendedProducts} />
+      <LatestArticles articles={data.latestArticles} />
     </div>
   );
 }
@@ -130,6 +147,37 @@ function RecommendedProducts({
   );
 }
 
+function LatestArticles({
+  articles,
+}: {
+  articles: Promise<GetLatestArticlesQuery | null>;
+}) {
+  return (
+    <div className="my-12">
+      <h2 className="text-2xl font-bold mb-6">Latest Articles</h2>
+      <Suspense
+        fallback={
+          <div className="text-center py-10 text-gray-500">Loading...</div>
+        }
+      >
+        <Await resolve={articles}>
+          {(response) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {response?.blog?.articles.edges.map((edge) => (
+                <ArticleItem
+                  key={edge.node.id}
+                  article={edge.node}
+                  loading="lazy"
+                />
+              )) || null}
+            </div>
+          )}
+        </Await>
+      </Suspense>
+    </div>
+  );
+}
+
 const FEATURED_COLLECTION_QUERY = `#graphql
   fragment FeaturedCollection on Collection {
     id
@@ -181,4 +229,29 @@ const RECOMMENDED_PRODUCTS_QUERY = `#graphql
       }
     }
   }
+` as const;
+
+const LATEST_ARTICLES_QUERY = `#graphql
+  query getLatestArticles($blogHandle: String!, $numArticles: Int!) {
+  blog(handle: $blogHandle) {
+    articles(first: $numArticles, sortKey: PUBLISHED_AT, reverse: true) {
+      edges {
+        node {
+          id
+          title
+          handle
+          publishedAt
+          excerpt(truncateAt: 150)
+          image {
+            url
+            altText
+          }
+          authorV2 {
+            name
+          }
+        }
+      }
+    }
+  }
+}
 ` as const;
