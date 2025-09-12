@@ -103,6 +103,15 @@ export function Header({
             >
               <h1 className="font-medium my-0">{shop.name}</h1>
             </NavLink>
+            {/* Desktop Navigation */}
+            <div className="hidden lg:block flex-1 px-12">
+              <HeaderMenu
+                menu={menu}
+                viewport="desktop"
+                primaryDomainUrl={header.shop.primaryDomain.url}
+                publicStoreDomain="{publicStoreDomain}"
+              />
+            </div>
           </div>
         </div>
       </header>
@@ -124,43 +133,50 @@ export function HeaderMenu({
   const className = `header-menu-${viewport}`;
   const {close} = useAside();
 
-  return (
-    <nav className={className} role="navigation">
-      {viewport === 'mobile' && (
-        <NavLink
-          end
-          onClick={close}
-          prefetch="intent"
-          style={activeLinkStyle}
-          to="/"
-        >
-          Home
-        </NavLink>
-      )}
-      {(menu || FALLBACK_HEADER_MENU).items.map((item) => {
-        if (!item.url) return null;
+  const baseClassName =
+    'transition-all duration-200 hover:text-brand-gold font-source relative after:content-[""] after:absolute after:-bottom-0 after:left-0 after:w-0 after:h-[1px] after:bg-brand-gold after:transition-all after:duration-300 hover:after:w-full';
+  const desktopClassName =
+    'flex items-center justify-center space-x-12 text-sm uppercase tracking-wider';
+  const mobileClassName = 'flex flex-col px-6';
 
-        // if the url is internal, we strip the domain
-        const url =
-          item.url.includes('myshopify.com') ||
-          item.url.includes(publicStoreDomain) ||
-          item.url.includes(primaryDomainUrl)
-            ? new URL(item.url).pathname
-            : item.url;
-        return (
-          <NavLink
-            className="header-menu-item"
-            end
-            key={item.id}
-            onClick={close}
-            prefetch="intent"
-            style={activeLinkStyle}
-            to={url}
-          >
-            {item.title}
-          </NavLink>
-        );
-      })}
+  return (
+    <nav
+      className={viewport === 'mobile' ? mobileClassName : desktopClassName}
+      role="navigation"
+    >
+      {viewport === 'mobile' && <></>}
+
+      {viewport === 'desktop' && (
+        <>
+          {(menu ?? FALLBACK_HEADER_MENU).items.map((item) => {
+            if (!item.url) return null;
+
+            // if the url is internal, we strip the domain
+            const url =
+              item.url.includes('myshopify.com') ||
+              item.url.includes(publicStoreDomain) ||
+              item.url.includes(primaryDomainUrl)
+                ? new URL(item.url).pathname
+                : item.url;
+            return (
+              <NavLink
+                className={({isActive}) =>
+                  `${baseClassName} ${
+                    isActive ? 'text-brand-gold' : 'text-brand-navy'
+                  }`
+                }
+                end
+                key={item.id}
+                onClick={close}
+                prefetch="intent"
+                to={url}
+              >
+                {item.title}
+              </NavLink>
+            );
+          })}
+        </>
+      )}
     </nav>
   );
 }
