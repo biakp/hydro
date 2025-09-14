@@ -66,7 +66,7 @@ export function Aside({
             &times;
           </button>
         </header>
-        <main>{children}</main>
+        <main className="h-[85vh]">{children}</main>
       </aside>
     </div>
   );

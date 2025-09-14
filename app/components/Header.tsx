@@ -7,7 +7,7 @@ import {
 } from '@shopify/hydrogen';
 import type {HeaderQuery, CartApiQueryFragment} from 'storefrontapi.generated';
 import {useAside} from '~/components/Aside';
-import {Menu} from 'lucide-react';
+import {Menu, Search, ShoppingCart, User} from 'lucide-react';
 
 interface HeaderProps {
   header: HeaderQuery;
@@ -74,26 +74,28 @@ export function Header({
       <header
         className={`transition-all duration-500 ease-in-out border-b ${isScrolled ? 'bg-white/80 backdrop-blur-lg shadow-sm border-transparent' : 'bg-white border-gray-100'}`}
       >
-        <div className="container mx-auto">
-          {/* Mobile Logo (550px and below) */}
-          <div
-            className={`hidden max-[550px]:block text-center border-b border-gray-100 transition-all duration-300 ease-in-out ${isScrolled ? 'py-1' : 'py-2'}`}
-          >
-            <NavLink
-              to="/"
-              prefetch="intent"
-              className="font-playfair text-2xl tracking-normal inline-block"
+        <div className="container mx-auto lg:mx-20">
+          <div className="flex justify-between items-center relative">
+            {/* Mobile Logo (550px and below) */}
+            <div
+              className={`hidden max-[550px]:block text-center border-b ml-4 border-gray-100 transition-all duration-300 ease-in-out ${isScrolled ? 'py-1' : 'py-2'}`}
             >
-              <h1 className="font-medium uppercase my-0">{shop.name}</h1>
-            </NavLink>
-          </div>
-          {/* Header content */}
-          <div
-            className={`flex items-center justify-between px-4 sm:px-6 transition-all duration-300 ease-in-out ${isScrolled ? 'py-3 sm:py-4' : ''}`}
-          >
-            {/* Mobile Menu Toggle */}
-            <div className="lg:hidden">
-              <HeaderMenuMobileToggle />
+              <NavLink
+                to="/"
+                prefetch="intent"
+                className="font-playfair text-2xl tracking-normal inline-block"
+              >
+                <h1 className="font-medium uppercase my-0">{shop.name}</h1>
+              </NavLink>
+            </div>
+            {/* Header content */}
+            <div
+              className={`flex items-center justify-between px-4 sm:px-6 transition-all duration-300 ease-in-out ${isScrolled ? 'py-3 sm:py-4' : ''}`}
+            >
+              {/* Mobile Menu Toggle */}
+              <div className="lg:hidden">
+                <HeaderMenuMobileToggle />
+              </div>
             </div>
             {/* Desktop Logo (550px and above) */}
             <NavLink
@@ -104,12 +106,14 @@ export function Header({
               <h1 className="font-medium my-0">{shop.name}</h1>
             </NavLink>
             {/* Desktop Navigation */}
-            <div className="hidden lg:block flex-1 px-12">
+            <div className="hidden lg:block flex-1 px-2">
               <HeaderMenu
                 menu={menu}
                 viewport="desktop"
                 primaryDomainUrl={header.shop.primaryDomain.url}
                 publicStoreDomain="{publicStoreDomain}"
+                isLoggedIn={isLoggedIn}
+                cart={cart}
               />
             </div>
           </div>
@@ -124,57 +128,121 @@ export function HeaderMenu({
   primaryDomainUrl,
   viewport,
   publicStoreDomain,
+  isLoggedIn,
+  cart,
 }: {
   menu: HeaderProps['header']['menu'];
   primaryDomainUrl: HeaderProps['header']['shop']['primaryDomain']['url'];
   viewport: Viewport;
   publicStoreDomain: HeaderProps['publicStoreDomain'];
+  isLoggedIn: HeaderProps['isLoggedIn'];
+  cart: HeaderProps['cart'];
 }) {
   const className = `header-menu-${viewport}`;
-  const {close} = useAside();
+  const {close, open} = useAside();
 
   const baseClassName =
     'transition-all duration-200 hover:text-brand-gold font-source relative after:content-[""] after:absolute after:-bottom-0 after:left-0 after:w-0 after:h-[1px] after:bg-brand-gold after:transition-all after:duration-300 hover:after:w-full';
   const desktopClassName =
-    'flex items-center justify-center space-x-12 text-sm uppercase tracking-wider';
-  const mobileClassName = 'flex flex-col px-6';
+    'flex items-center justify-around text-sm uppercase tracking-wider';
+  const mobileClassName = 'h-full flex flex-col px-6';
 
   return (
     <nav
       className={viewport === 'mobile' ? mobileClassName : desktopClassName}
       role="navigation"
     >
-      {viewport === 'mobile' && <></>}
+      {viewport === 'mobile' && (
+        <>
+          {/* Mobile Navigation Links */}
+          <div className="space-y-6 py-4">
+            {(menu ?? FALLBACK_HEADER_MENU).items.map((item) => {
+              if (!item.url) return null;
+              // if the url is internal, we strip the domain
+              const url =
+                item.url.includes('myshopify.com') ||
+                item.url.includes(publicStoreDomain) ||
+                item.url.includes(primaryDomainUrl)
+                  ? new URL(item.url).pathname
+                  : item.url;
+              return (
+                <NavLink
+                  className={({isActive}) =>
+                    `${baseClassName} text-lg py-2 block ${
+                      isActive ? 'text-brand-gold' : 'text-brand-navy'
+                    }`
+                  }
+                  end
+                  key={item.id}
+                  onClick={close}
+                  prefetch="intent"
+                  to={url}
+                >
+                  {item.title}
+                </NavLink>
+              );
+            })}
+          </div>
+          {/* Mobile Footer Links */}
+          <div className="mt-auto border-t border-gray-100 py-6">
+            <div className="space-y-4">
+              <NavLink
+                to="/account"
+                className="flex items-center space-x-2 text-brand-navy hover:text-brand-gold"
+              >
+                <User className="w-5 h-5" />
+                <span className="font-source text-base">Account</span>
+              </NavLink>
+              <button
+                onClick={() => {
+                  close();
+                  // Open search aside after closing the current one
+                  setTimeout(() => {
+                    open('search');
+                  }, 100);
+                }}
+                className="flex items-center space-x-2 text-brand-navy hover:text-brand-gold w-full text-left"
+              >
+                <Search className="w-5 h-5" />
+                <span className="font-source text-base">Search</span>
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {viewport === 'desktop' && (
         <>
-          {(menu ?? FALLBACK_HEADER_MENU).items.map((item) => {
-            if (!item.url) return null;
+          <div className="hidden lg:flex lg:items-center lg:space-x-12">
+            {(menu ?? FALLBACK_HEADER_MENU).items.map((item) => {
+              if (!item.url) return null;
 
-            // if the url is internal, we strip the domain
-            const url =
-              item.url.includes('myshopify.com') ||
-              item.url.includes(publicStoreDomain) ||
-              item.url.includes(primaryDomainUrl)
-                ? new URL(item.url).pathname
-                : item.url;
-            return (
-              <NavLink
-                className={({isActive}) =>
-                  `${baseClassName} ${
-                    isActive ? 'text-brand-gold' : 'text-brand-navy'
-                  }`
-                }
-                end
-                key={item.id}
-                onClick={close}
-                prefetch="intent"
-                to={url}
-              >
-                {item.title}
-              </NavLink>
-            );
-          })}
+              // if the url is internal, we strip the domain
+              const url =
+                item.url.includes('myshopify.com') ||
+                item.url.includes(publicStoreDomain) ||
+                item.url.includes(primaryDomainUrl)
+                  ? new URL(item.url).pathname
+                  : item.url;
+              return (
+                <NavLink
+                  className={({isActive}) =>
+                    `${baseClassName} ${
+                      isActive ? 'text-brand-gold' : 'text-brand-navy'
+                    }`
+                  }
+                  end
+                  key={item.id}
+                  onClick={close}
+                  prefetch="intent"
+                  to={url}
+                >
+                  {item.title}
+                </NavLink>
+              );
+            })}
+          </div>
+          <HeaderCtas isLoggedIn={isLoggedIn} cart={cart} />
         </>
       )}
     </nav>
@@ -186,16 +254,16 @@ function HeaderCtas({
   cart,
 }: Pick<HeaderProps, 'isLoggedIn' | 'cart'>) {
   return (
-    <nav className="header-ctas" role="navigation">
-      <HeaderMenuMobileToggle />
-      <NavLink prefetch="intent" to="/account" style={activeLinkStyle}>
-        <Suspense fallback="Sign in">
-          <Await resolve={isLoggedIn} errorElement="Sign in">
-            {(isLoggedIn) => (isLoggedIn ? 'Account' : 'Sign in')}
-          </Await>
-        </Suspense>
-      </NavLink>
+    <nav className="flex items-center space-x-1" role="navigation">
       <SearchToggle />
+      <NavLink
+        prefetch="intent"
+        to="/account"
+        className="p-2 hover:text-brand-gold transition-all duration-200 relative flex items-center"
+      >
+        <User className="h-6 w-6 stroke-1" />
+        <span className="sr-only">Account</span>
+      </NavLink>
       <CartToggle cart={cart} />
     </nav>
   );
@@ -216,8 +284,11 @@ function HeaderMenuMobileToggle() {
 function SearchToggle() {
   const {open} = useAside();
   return (
-    <button className="reset" onClick={() => open('search')}>
-      Search
+    <button
+      className="p-2 hover:text-brand-gold transition-colors duration-200"
+      onClick={() => open('search')}
+    >
+      <Search className="h-6 w-6 stroke-1" />
     </button>
   );
 }
@@ -239,8 +310,14 @@ function CartBadge({count}: {count: number | null}) {
           url: window.location.href || '',
         } as CartViewPayload);
       }}
+      className="p-2 hover:text-brand-gold transition-colors duration-200 relative flex items-center"
     >
-      Cart {count === null ? <span>&nbsp;</span> : count}
+      <ShoppingCart className="h-6 w-6 stroke-1" />
+      {count !== null && count > 0 && (
+        <span className="absolute top-1 -right-1 bg-brand-gold text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+          {count}
+        </span>
+      )}
     </a>
   );
 }
@@ -302,16 +379,3 @@ const FALLBACK_HEADER_MENU = {
     },
   ],
 };
-
-function activeLinkStyle({
-  isActive,
-  isPending,
-}: {
-  isActive: boolean;
-  isPending: boolean;
-}) {
-  return {
-    fontWeight: isActive ? 'bold' : undefined,
-    color: isPending ? 'grey' : 'black',
-  };
-}
